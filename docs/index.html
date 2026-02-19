@@ -102,20 +102,6 @@ input[type="range"]::-moz-range-thumb {
 .stat-pill .s-label { font-size: 0.65rem; color: var(--text4); text-transform: uppercase; letter-spacing: 0.04em; }
 .stat-pill .s-value { font-size: 1.05rem; font-weight: 700; margin-top: 1px; }
 
-/* ─── TABS (mobile) ─── */
-.tab-bar {
-  display: flex; gap: 4px; background: var(--surface); border-radius: 10px;
-  padding: 4px; margin-bottom: 12px; border: 1px solid var(--border);
-}
-.tab-btn {
-  flex: 1; padding: 10px; border-radius: 8px; border: none;
-  background: transparent; color: var(--text3); font-size: 0.85rem;
-  font-weight: 600; cursor: pointer; transition: all 0.2s;
-}
-.tab-btn.active { background: var(--accent); color: white; }
-@media (min-width: 768px) {
-  .tab-bar { display: none; }
-}
 
 /* ─── DESKTOP LAYOUT ─── */
 .desktop-grid {
@@ -248,11 +234,6 @@ input[type="range"]::-moz-range-thumb {
   font-variant-numeric: tabular-nums;
 }
 
-/* ─── MOBILE TAB CONTENT ─── */
-.mobile-hide { display: none; }
-@media (min-width: 768px) {
-  .mobile-hide { display: block !important; }
-}
 </style>
 </head>
 <body>
@@ -410,7 +391,6 @@ function App() {
   const [ratings, setRatings] = useState(saved?.ratings || {});
   const [aversion, setAversion] = useState(saved?.aversion || 5);
   const [catFilter, setCatFilter] = useState('All');
-  const [tab, setTab] = useState('rate'); // mobile tabs
 
   useEffect(() => {
     try { localStorage.setItem(LS, JSON.stringify({ ratings, aversion })); } catch(e) {}
@@ -486,19 +466,9 @@ function App() {
         </div>
       </div>
 
-      {/* Mobile tabs */}
-      <div className="tab-bar">
-        <button className={`tab-btn ${tab === 'rate' ? 'active' : ''}`} onClick={() => setTab('rate')}>
-          Rate Hobbies
-        </button>
-        <button className={`tab-btn ${tab === 'rank' ? 'active' : ''}`} onClick={() => setTab('rank')}>
-          Rankings{ranked.length > 0 ? ` (${ranked.length})` : ''}
-        </button>
-      </div>
-
       <div className="desktop-grid">
         {/* Rate panel */}
-        <div className={`panel ${tab !== 'rate' ? 'mobile-hide' : ''}`}>
+        <div className="panel">
           <div className="panel-head">
             <span className="panel-title">Rate Your Hobbies</span>
             <button className="clear-btn" onClick={() => setRatings({})}>Clear All</button>
@@ -525,7 +495,7 @@ function App() {
         </div>
 
         {/* Rankings panel */}
-        <div className={`panel ${tab !== 'rank' ? 'mobile-hide' : ''}`}>
+        <div className="panel">
           <div className="panel-head">
             <span className="panel-title">Risk-Adjusted Rankings</span>
           </div>
