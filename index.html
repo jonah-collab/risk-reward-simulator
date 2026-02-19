@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f172a">
+<title>Risk-Reward Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface2: #263548;
+  --border: #334155;
+  --text: #f1f5f9;
+  --text2: #cbd5e1;
+  --text3: #94a3b8;
+  --text4: #64748b;
+  --accent: #8b5cf6;
+  --accent2: #a78bfa;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #eab308;
+  --orange: #f97316;
+  --cyan: #06b6d4;
+  --radius: 12px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { height: 100%; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.5;
+  min-height: 100%; overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: inherit; }
+
+/* ─── APP SHELL ─── */
+.app {
+  max-width: 600px; margin: 0 auto;
+  padding: 0 16px 100px;
+  min-height: 100vh;
+}
+@media (min-width: 768px) {
+  .app { max-width: 1100px; padding: 0 24px 40px; }
+}
+
+/* ─── HEADER ─── */
+.header {
+  padding: 20px 0 16px; text-align: center;
+}
+.header h1 { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; }
+.header p { color: var(--text3); font-size: 0.8rem; margin-top: 2px; }
+@media (min-width: 768px) {
+  .header h1 { font-size: 1.6rem; }
+}
+
+/* ─── RISK PROFILE ─── */
+.risk-card {
+  background: var(--surface); border-radius: var(--radius); padding: 16px;
+  margin-bottom: 12px; border: 1px solid var(--border);
+}
+.risk-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.risk-label { font-size: 0.8rem; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+.persona-badge {
+  font-size: 0.78rem; font-weight: 700; padding: 4px 14px; border-radius: 20px;
+}
+.risk-slider-wrap { position: relative; padding: 0 2px; }
+.risk-slider-labels { display: flex; justify-content: space-between; margin-top: 6px; }
+.risk-slider-labels span { font-size: 0.7rem; color: var(--text4); }
+.risk-desc { font-size: 0.78rem; color: var(--text4); text-align: center; margin-top: 10px; line-height: 1.4; }
+
+input[type="range"] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 8px;
+  border-radius: 4px; outline: none; cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 28px; height: 28px;
+  border-radius: 50%; background: white; cursor: pointer;
+  border: 3px solid var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 28px; height: 28px; border-radius: 50%; background: white;
+  cursor: pointer; border: 3px solid var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* ─── STATS ─── */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  margin-bottom: 12px;
+}
+.stat-pill {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px 12px; text-align: center;
+}
+.stat-pill .s-label { font-size: 0.65rem; color: var(--text4); text-transform: uppercase; letter-spacing: 0.04em; }
+.stat-pill .s-value { font-size: 1.05rem; font-weight: 700; margin-top: 1px; }
+
+/* ─── TABS (mobile) ─── */
+.tab-bar {
+  display: flex; gap: 4px; background: var(--surface); border-radius: 10px;
+  padding: 4px; margin-bottom: 12px; border: 1px solid var(--border);
+}
+.tab-btn {
+  flex: 1; padding: 10px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text3); font-size: 0.85rem;
+  font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.tab-btn.active { background: var(--accent); color: white; }
+@media (min-width: 768px) {
+  .tab-bar { display: none; }
+}
+
+/* ─── DESKTOP LAYOUT ─── */
+.desktop-grid {
+  display: flex; flex-direction: column; gap: 12px;
+}
+@media (min-width: 768px) {
+  .desktop-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start;
+  }
+  .desktop-grid > .panel { max-height: calc(100vh - 300px); overflow-y: auto; padding-right: 4px; }
+  .desktop-grid > .panel::-webkit-scrollbar { width: 5px; }
+  .desktop-grid > .panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+}
+
+/* ─── PANEL HEADERS ─── */
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px; position: sticky; top: 0; background: var(--bg);
+  padding: 4px 0; z-index: 2;
+}
+.panel-title { font-size: 0.8rem; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+.clear-btn {
+  padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text3); font-size: 0.72rem;
+  font-weight: 600; cursor: pointer; transition: all 0.15s;
+}
+.clear-btn:hover, .clear-btn:active { background: var(--surface2); color: var(--text); }
+
+/* ─── FILTERS ─── */
+.filters {
+  display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.filters::-webkit-scrollbar { display: none; }
+.filter-chip {
+  padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text3); font-size: 0.75rem;
+  font-weight: 600; cursor: pointer; transition: all 0.15s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.filter-chip:hover, .filter-chip:active { border-color: var(--text4); color: var(--text2); }
+.filter-chip.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+/* ─── CATEGORY DIVIDER ─── */
+.cat-divider {
+  font-size: 0.7rem; font-weight: 700; color: var(--text4);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 10px 0 4px; border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+
+/* ─── HOBBY CARD ─── */
+.hobby-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px; margin-bottom: 8px;
+  transition: border-color 0.2s;
+}
+.hobby-card.rated { border-color: rgba(139,92,246,0.5); }
+.hobby-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.hobby-name { font-size: 0.9rem; font-weight: 600; flex: 1; }
+.risk-tag {
+  font-size: 0.6rem; font-weight: 700; padding: 3px 8px; border-radius: 4px;
+  text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0;
+}
+.risk-extreme { background: rgba(239,68,68,0.15); color: var(--red); }
+.risk-high { background: rgba(249,115,22,0.15); color: var(--orange); }
+.risk-moderate { background: rgba(234,179,8,0.15); color: var(--yellow); }
+.risk-low { background: rgba(34,197,94,0.15); color: var(--green); }
+.risk-minimal { background: rgba(6,182,212,0.15); color: var(--cyan); }
+
+.hobby-meta { display: flex; gap: 12px; margin-bottom: 10px; }
+.hobby-stat { font-size: 0.68rem; color: var(--text4); display: flex; align-items: center; gap: 4px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.dot-death { background: var(--red); }
+.dot-injury { background: var(--orange); }
+
+/* Rating row */
+.rating-row { display: flex; gap: 4px; }
+.rate-btn {
+  flex: 1; height: 38px; border-radius: 8px; border: 1.5px solid var(--border);
+  background: var(--bg); color: var(--text4); font-size: 0.82rem; font-weight: 700;
+  cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.rate-btn:hover { border-color: var(--accent); color: var(--text2); }
+.rate-btn:active { transform: scale(0.95); }
+.rate-btn.active {
+  background: var(--accent); border-color: var(--accent); color: white;
+}
+.rate-btn.filled {
+  background: rgba(139,92,246,0.2); border-color: rgba(139,92,246,0.4); color: var(--accent2);
+}
+
+/* ─── RANKINGS ─── */
+.rank-empty {
+  text-align: center; color: var(--text4); font-size: 0.85rem;
+  padding: 48px 24px; background: var(--surface); border-radius: var(--radius);
+  border: 1px dashed var(--border); line-height: 1.6;
+}
+
+.rank-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 10px;
+}
+.rank-pos {
+  font-size: 1.1rem; font-weight: 800; min-width: 30px; text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.rank-pos.p1 { color: #fbbf24; }
+.rank-pos.p2 { color: #d1d5db; }
+.rank-pos.p3 { color: #d97706; }
+.rank-body { flex: 1; min-width: 0; }
+.rank-name-row { display: flex; align-items: center; gap: 6px; }
+.rank-name { font-size: 0.88rem; font-weight: 600; }
+.rank-meta { font-size: 0.68rem; color: var(--text4); margin-top: 2px; }
+.rank-bar {
+  height: 5px; background: var(--border); border-radius: 3px;
+  margin-top: 6px; overflow: hidden;
+}
+.rank-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+.rank-right { text-align: right; flex-shrink: 0; }
+.rank-enjoy {
+  font-size: 0.7rem; font-weight: 600; color: var(--accent2);
+  background: rgba(139,92,246,0.12); padding: 2px 8px; border-radius: 4px;
+}
+.rank-score {
+  font-size: 1.15rem; font-weight: 800; margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── MOBILE TAB CONTENT ─── */
+.mobile-hide { display: none; }
+@media (min-width: 768px) {
+  .mobile-hide { display: block !important; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo, useEffect, useCallback } = React;
+
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const HOBBIES = [
+  { id: 'wingsuit', name: 'Wingsuit Flying', cat: 'Extreme', dr: 100, ir: 40 },
+  { id: 'basejump', name: 'Base Jumping', cat: 'Extreme', dr: 43, ir: 50 },
+  { id: 'freesolo', name: 'Free Solo Climbing', cat: 'Extreme', dr: 60, ir: 25 },
+  { id: 'bullriding', name: 'Bull Riding', cat: 'Extreme', dr: 15, ir: 120 },
+  { id: 'motoracing', name: 'Motorcycle Racing', cat: 'Extreme', dr: 20, ir: 80 },
+  { id: 'bigwave', name: 'Big Wave Surfing', cat: 'Extreme', dr: 10, ir: 60 },
+  { id: 'hangglide', name: 'Hang Gliding', cat: 'Adventure', dr: 8, ir: 30 },
+  { id: 'paraglide', name: 'Paragliding', cat: 'Adventure', dr: 6, ir: 25 },
+  { id: 'mountaineer', name: 'Mountaineering', cat: 'Adventure', dr: 4, ir: 40 },
+  { id: 'scuba', name: 'Scuba Diving', cat: 'Adventure', dr: 3, ir: 15 },
+  { id: 'whitewater', name: 'Whitewater Kayaking', cat: 'Adventure', dr: 2.5, ir: 35 },
+  { id: 'boxing', name: 'Boxing / MMA', cat: 'Adventure', dr: 1.3, ir: 250 },
+  { id: 'skydive', name: 'Skydiving', cat: 'Adventure', dr: 0.7, ir: 8 },
+  { id: 'mtbike', name: 'Mountain Biking', cat: 'Action Sports', dr: 0.4, ir: 45 },
+  { id: 'snowboard', name: 'Snowboarding', cat: 'Action Sports', dr: 0.3, ir: 40 },
+  { id: 'skiing', name: 'Skiing', cat: 'Action Sports', dr: 0.4, ir: 35 },
+  { id: 'skateboard', name: 'Skateboarding', cat: 'Action Sports', dr: 0.1, ir: 30 },
+  { id: 'surfing', name: 'Surfing', cat: 'Action Sports', dr: 0.2, ir: 25 },
+  { id: 'rockclimb', name: 'Rock Climbing (roped)', cat: 'Action Sports', dr: 0.5, ir: 20 },
+  { id: 'horse', name: 'Horseback Riding', cat: 'Action Sports', dr: 0.5, ir: 35 },
+  { id: 'cycling', name: 'Road Cycling', cat: 'Sports', dr: 0.6, ir: 20 },
+  { id: 'swimming', name: 'Swimming', cat: 'Sports', dr: 1.5, ir: 5 },
+  { id: 'soccer', name: 'Soccer', cat: 'Sports', dr: 0.1, ir: 15 },
+  { id: 'basketball', name: 'Basketball', cat: 'Sports', dr: 0.02, ir: 20 },
+  { id: 'running', name: 'Running / Jogging', cat: 'Sports', dr: 0.5, ir: 10 },
+  { id: 'tennis', name: 'Tennis', cat: 'Sports', dr: 0.01, ir: 8 },
+  { id: 'trackfield', name: 'Track & Field', cat: 'Sports', dr: 0.08, ir: 14 },
+  { id: 'hiking', name: 'Hiking', cat: 'Leisure', dr: 0.1, ir: 8 },
+  { id: 'fishing', name: 'Fishing', cat: 'Leisure', dr: 0.05, ir: 3 },
+  { id: 'golf', name: 'Golf', cat: 'Leisure', dr: 0.01, ir: 5 },
+  { id: 'gardening', name: 'Gardening', cat: 'Leisure', dr: 0.01, ir: 3 },
+  { id: 'bowling', name: 'Bowling', cat: 'Leisure', dr: 0.001, ir: 1 },
+  { id: 'yoga', name: 'Yoga', cat: 'Leisure', dr: 0.001, ir: 2 },
+  { id: 'tabletennis', name: 'Table Tennis', cat: 'Leisure', dr: 0.001, ir: 1 },
+  { id: 'walking', name: 'Walking', cat: 'Leisure', dr: 0.02, ir: 2 },
+  { id: 'photography', name: 'Photography', cat: 'Leisure', dr: 0.01, ir: 0.5 },
+  { id: 'chess', name: 'Chess', cat: 'Leisure', dr: 0, ir: 0.1 },
+  { id: 'cooking', name: 'Cooking', cat: 'Leisure', dr: 0.005, ir: 4 },
+  { id: 'dancing', name: 'Dancing', cat: 'Leisure', dr: 0.005, ir: 6 },
+  { id: 'kayak', name: 'Flatwater Kayaking', cat: 'Leisure', dr: 0.3, ir: 4 },
+  { id: 'videogames', name: 'Video Games', cat: 'Leisure', dr: 0, ir: 0.2 },
+  { id: 'pottery', name: 'Pottery', cat: 'Leisure', dr: 0, ir: 1.5 },
+  { id: 'dogwalking', name: 'Dog Walking', cat: 'Leisure', dr: 0.01, ir: 4 },
+  { id: 'mtg', name: 'Magic: The Gathering', cat: 'Leisure', dr: 0, ir: 0.1 },
+  { id: 'crosswords', name: 'Crosswords', cat: 'Leisure', dr: 0, ir: 0.1 },
+  { id: 'karaoke', name: 'Karaoke', cat: 'Leisure', dr: 0, ir: 0.2 },
+  { id: 'animation', name: 'Animation', cat: 'Leisure', dr: 0, ir: 0.5 },
+  { id: 'standup', name: 'Stand-Up Comedy', cat: 'Leisure', dr: 0, ir: 0.2 },
+  { id: 'drawing', name: 'Drawing / Art', cat: 'Leisure', dr: 0, ir: 0.3 },
+];
+
+const CATS = ['Extreme', 'Adventure', 'Action Sports', 'Sports', 'Leisure'];
+
+const maxD = Math.log(Math.max(...HOBBIES.map(h => h.dr)) + 1);
+const maxI = Math.log(Math.max(...HOBBIES.map(h => h.ir)) + 1);
+HOBBIES.forEach(h => {
+  h.dn = Math.log(h.dr + 1) / maxD;
+  h.jn = Math.log(h.ir + 1) / maxI;
+  h.risk = 0.65 * h.dn + 0.35 * h.jn;
+});
+
+function riskLevel(h) {
+  if (h.risk > 0.7) return { t: 'Extreme', c: 'risk-extreme' };
+  if (h.risk > 0.45) return { t: 'High', c: 'risk-high' };
+  if (h.risk > 0.25) return { t: 'Moderate', c: 'risk-moderate' };
+  if (h.risk > 0.08) return { t: 'Low', c: 'risk-low' };
+  return { t: 'Minimal', c: 'risk-minimal' };
+}
+
+function persona(a) {
+  if (a <= 2) return { l: 'Daredevil', col: '#ef4444', d: 'Risk barely factors into your decisions. Life is short — send it.' };
+  if (a <= 4) return { l: 'Thrill Seeker', col: '#f97316', d: 'A little danger makes things exciting. You accept reasonable risk for big rewards.' };
+  if (a <= 6) return { l: 'Balanced', col: '#eab308', d: 'You weigh risk and reward evenly. Moderate danger gives you pause.' };
+  if (a <= 8) return { l: 'Cautious', col: '#22c55e', d: 'Safety matters. High-risk hobbies need an exceptionally strong appeal.' };
+  return { l: 'Safety First', col: '#06b6d4', d: 'You strongly prefer avoiding unnecessary risk. Only the safest activities rank highly.' };
+}
+
+function adjScore(enjoy, risk, aversion) {
+  const pf = ((aversion - 1) / 9) * 0.95;
+  return enjoy * (1 - pf * risk);
+}
+
+const LS = 'risk-reward-sim-v2';
+function load() { try { const r = localStorage.getItem(LS); return r ? JSON.parse(r) : null; } catch(e) { return null; } }
+
+// ─── COMPONENTS ──────────────────────────────────────────────────────────────
+
+function HobbyCard({ hobby, rating, onRate }) {
+  const rl = riskLevel(hobby);
+  return (
+    <div className={`hobby-card ${rating > 0 ? 'rated' : ''}`}>
+      <div className="hobby-top">
+        <span className="hobby-name">{hobby.name}</span>
+        <span className={`risk-tag ${rl.c}`}>{rl.t}</span>
+      </div>
+      <div className="hobby-meta">
+        <span className="hobby-stat"><span className="dot dot-death" />{hobby.dr < 0.01 ? '<0.01' : hobby.dr} deaths/100K/yr</span>
+        <span className="hobby-stat"><span className="dot dot-injury" />{hobby.ir} injuries/1K/yr</span>
+      </div>
+      <div className="rating-row">
+        {[1,2,3,4,5,6,7,8,9,10].map(n => (
+          <button
+            key={n}
+            className={`rate-btn ${n === rating ? 'active' : n < rating ? 'filled' : ''}`}
+            onClick={() => onRate(hobby.id, n === rating ? 0 : n)}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RankItem({ rank, hobby, rating, score }) {
+  const rl = riskLevel(hobby);
+  const penalty = rating - score;
+  const barCol = score >= 7 ? '#22c55e' : score >= 4 ? '#eab308' : '#ef4444';
+  return (
+    <div className="rank-item">
+      <div className={`rank-pos ${rank === 1 ? 'p1' : rank === 2 ? 'p2' : rank === 3 ? 'p3' : ''}`}>
+        {rank}
+      </div>
+      <div className="rank-body">
+        <div className="rank-name-row">
+          <span className="rank-name">{hobby.name}</span>
+          <span className={`risk-tag ${rl.c}`}>{rl.t}</span>
+        </div>
+        <div className="rank-meta">
+          Enjoyment {rating}/10 &middot; Risk penalty -{penalty.toFixed(1)}
+        </div>
+        <div className="rank-bar">
+          <div className="rank-bar-fill" style={{ width: `${score * 10}%`, background: barCol }} />
+        </div>
+      </div>
+      <div className="rank-right">
+        <div className="rank-enjoy">{rating}/10</div>
+        <div className="rank-score" style={{ color: barCol }}>{score.toFixed(1)}</div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const saved = load();
+  const [ratings, setRatings] = useState(saved?.ratings || {});
+  const [aversion, setAversion] = useState(saved?.aversion || 5);
+  const [catFilter, setCatFilter] = useState('All');
+  const [tab, setTab] = useState('rate'); // mobile tabs
+
+  useEffect(() => {
+    try { localStorage.setItem(LS, JSON.stringify({ ratings, aversion })); } catch(e) {}
+  }, [ratings, aversion]);
+
+  const handleRate = useCallback((id, val) => {
+    setRatings(prev => {
+      const next = { ...prev };
+      if (val === 0) delete next[id]; else next[id] = val;
+      return next;
+    });
+  }, []);
+
+  const p = persona(aversion);
+
+  const filtered = useMemo(() =>
+    catFilter === 'All' ? HOBBIES : HOBBIES.filter(h => h.cat === catFilter)
+  , [catFilter]);
+
+  const ranked = useMemo(() =>
+    HOBBIES
+      .filter(h => ratings[h.id] > 0)
+      .map(h => ({ h, r: ratings[h.id], s: adjScore(ratings[h.id], h.risk, aversion) }))
+      .sort((a, b) => b.s - a.s)
+  , [ratings, aversion]);
+
+  const ratedCount = Object.keys(ratings).length;
+  const avg = ranked.length > 0 ? ranked.reduce((s, x) => s + x.s, 0) / ranked.length : 0;
+  const top = ranked[0];
+
+  return (
+    <div className="app">
+      <div className="header">
+        <h1>Risk-Reward Simulator</h1>
+        <p>Rate hobbies. Calibrate your risk tolerance. See what's worth it.</p>
+      </div>
+
+      <div className="risk-card">
+        <div className="risk-top">
+          <span className="risk-label">Risk Profile</span>
+          <span className="persona-badge" style={{ background: p.col + '20', color: p.col, border: `1px solid ${p.col}40` }}>
+            {p.l}
+          </span>
+        </div>
+        <div className="risk-slider-wrap">
+          <input
+            type="range" min={1} max={10} step={1} value={aversion}
+            style={{ background: 'linear-gradient(to right, #ef4444, #f97316, #eab308, #22c55e, #06b6d4)' }}
+            onChange={e => setAversion(parseInt(e.target.value))}
+          />
+          <div className="risk-slider-labels">
+            <span>Daredevil</span>
+            <span>Safety First</span>
+          </div>
+        </div>
+        <div className="risk-desc">{p.d}</div>
+      </div>
+
+      <div className="stats-grid">
+        <div className="stat-pill">
+          <div className="s-label">Rated</div>
+          <div className="s-value" style={{ color: 'var(--accent2)' }}>{ratedCount}/{HOBBIES.length}</div>
+        </div>
+        <div className="stat-pill">
+          <div className="s-label">Top Pick</div>
+          <div className="s-value" style={{ color: '#22c55e', fontSize: top ? '0.85rem' : undefined }}>{top ? top.h.name : '---'}</div>
+        </div>
+        <div className="stat-pill">
+          <div className="s-label">Avg Score</div>
+          <div className="s-value" style={{ color: avg >= 5 ? '#22c55e' : avg >= 3 ? '#eab308' : avg > 0 ? '#ef4444' : 'var(--text4)' }}>
+            {ranked.length ? avg.toFixed(1) : '---'}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile tabs */}
+      <div className="tab-bar">
+        <button className={`tab-btn ${tab === 'rate' ? 'active' : ''}`} onClick={() => setTab('rate')}>
+          Rate Hobbies
+        </button>
+        <button className={`tab-btn ${tab === 'rank' ? 'active' : ''}`} onClick={() => setTab('rank')}>
+          Rankings{ranked.length > 0 ? ` (${ranked.length})` : ''}
+        </button>
+      </div>
+
+      <div className="desktop-grid">
+        {/* Rate panel */}
+        <div className={`panel ${tab !== 'rate' ? 'mobile-hide' : ''}`}>
+          <div className="panel-head">
+            <span className="panel-title">Rate Your Hobbies</span>
+            <button className="clear-btn" onClick={() => setRatings({})}>Clear All</button>
+          </div>
+          <div className="filters">
+            {['All', ...CATS].map(c => (
+              <button key={c} className={`filter-chip ${catFilter === c ? 'active' : ''}`} onClick={() => setCatFilter(c)}>
+                {c}
+              </button>
+            ))}
+          </div>
+          {CATS.filter(c => catFilter === 'All' || catFilter === c).map(c => {
+            const items = filtered.filter(h => h.cat === c);
+            if (!items.length) return null;
+            return (
+              <React.Fragment key={c}>
+                <div className="cat-divider">{c}</div>
+                {items.map(h => (
+                  <HobbyCard key={h.id} hobby={h} rating={ratings[h.id] || 0} onRate={handleRate} />
+                ))}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* Rankings panel */}
+        <div className={`panel ${tab !== 'rank' ? 'mobile-hide' : ''}`}>
+          <div className="panel-head">
+            <span className="panel-title">Risk-Adjusted Rankings</span>
+          </div>
+          {ranked.length === 0 ? (
+            <div className="rank-empty">
+              Rate some hobbies to see your<br />personalized rankings here
+            </div>
+          ) : (
+            ranked.map((x, i) => (
+              <RankItem key={x.h.id} rank={i + 1} hobby={x.h} rating={x.r} score={x.s} />
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
